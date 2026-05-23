@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IoT Workshop Control Panel</title>
+    
+    <!-- 1. Load the MQTT JavaScript Library from the Internet -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/paho-mqtt/1.0.1/mqttws31.min.js"></script>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            background-color: #1e1e24;
+            color: white;
+            padding-top: 50px;
+        }
+        h1 { color: #00adb5; }
+        .btn {
+            padding: 15px 40px;
+            font-size: 18px;
+            font-weight: bold;
+            margin: 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .btn-on { background-color: #4caf50; color: white; }
+        .btn-on:hover { background-color: #45a049; }
+        .btn-off { background-color: #f44336; color: white; }
+        .btn-off:hover { background-color: #da190b; }
+        #status { font-weight: bold; color: #ff9800; margin-top: 20px; }
+    </style>
+</head>
+<body>
+
+    <h1>IoT Workshop Control Panel</h1>
+    <p>Control your hardware from anywhere across the globe!</p>
+    
+    <div id="status">Connecting to Cloud Broker...</div>
+
+    <!-- 2. The Interactive Dashboard Buttons -->
+    <button class="btn btn-on" onclick="sendSignal('1')">TURN LED ON</button>
+    <button class="btn btn-off" onclick="sendSignal('0')">TURN LED OFF</button>
+
+    <script>
+        // 3. Setup MQTT Broker Configurations (Must match your ESP32 code)
+        const brokerHost = "broker.hivemq.com";
+        const brokerPort = 8000; // Web browsers use Port 8000 (WebSockets) instead of 1883
+        const mqttTopic  = "sanchit/workshop/led";
+
+        // Create a unique client ID for the web browser
+        const clientId = "Web_Panel_" + Math.random().toString(16).substr(2, 8);
+        
+        // Initialize the MQTT client object
+        const client = new Paho.MQTT.Client(brokerHost, brokerPort, clientId);
+
+        // Define what happens when connection status changes
+        client.onConnectionLost = (responseObject) => {
+            document.getElementById("status").innerText = "Connection Lost! Retrying...";
+            document.getElementById("status").style.color = "#f44336";
+        };
+
+        // Connect to the broker
+        client.connect({
+            onSuccess: () => {
+                document.getElementById("status").innerText = "Successfully Connected to Cloud Broker!";
+                document.getElementById("status").style.color = "#4caf50";
+            }
+        });
+
+        // 4. Function called when a human clicks a button
+        function sendSignal(value) {
+            if (client.isConnected()) {
+                // Package your data string ('1' or '0')
+                const message = new Paho.MQTT.Message(value);
+                message.destinationName = mqttTopic;
+                
+                // Fire it into the cloud!
+                client.send(message);
+            } else {
+                alert("Not connected to the MQTT broker yet!");
+            }
+        }
+    </script>
+</body>
+</html>

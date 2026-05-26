@@ -1,30 +1,57 @@
 #include <WiFi.h>
+#include <WebServer.h>
 
-WiFiServer server(80);
+const char* ssid = "ESP32_Hotspot";
+const char* password = "12345678";
+
+WebServer server(80);
+const int LED_PIN = 2; 
 
 void setup() {
-  pinMode(2, OUTPUT);
+  pinMode(LED_PIN, OUTPUT);
+  WiFi.softAP(ssid, password);
 
-  // Connect to your Wi-Fi network instantly
-  WiFi.begin("YOUR_WIFI_NAME", "YOUR_WIFI_PASSWORD");
-  while (WiFi.status() != WL_CONNECTED) delay(10);
+  // Inline logic instead of external functions
+  server.on("/on", []() {
+    digitalWrite(LED_PIN, HIGH);
+    server.send(200, "text/plain", "ON");
+  });
+
+  server.on("/off", []() {
+    digitalWrite(LED_PIN, LOW);
+    server.send(200, "text/plain", "OFF");
+  });
 
   server.begin();
 }
 
 void loop() {
-  // Directly grab any incoming browser connection
-  WiFiClient client = server.available();
-  if (!client) return; // Skip everything else if no one is connecting
-
-  // Read what the browser typed in the address bar
-  String req = client.readStringUntil('\r');
-
-  // Direct action checks
-  if (req.indexOf("/on")  != -1) digitalWrite(2, HIGH);
-  if (req.indexOf("/off") != -1) digitalWrite(2, LOW);
-
-  // Send a minimal reply and immediately disconnect
-  client.print("Done!");
-  client.stop();
+  server.handleClient();
 }
+
+
+// senond code for the same purpose but with different approach
+
+#include <WiFi.h>
+
+WiFiServer server(80);
+const int LED_PIN = 2;
+
+void setup() {
+  pinMode(LED_PIN, OUTPUT);
+  WiFi.softAP("ESP32_Hotspot", "12345678");
+  server.begin();
+}
+
+void loop() {
+  WiFiClient client = server.available(); // Check if a phone is trying to connect
+  
+  if (client) {                           // If a phone connects
+    digitalWrite(LED_PIN, !digitalRead(LED_PIN)); // Toggle the LED (ON if OFF, OFF if ON)
+    client.print("HTTP/1.1 200 OK\r\n\r\n toggled"); // Send a basic reply to the browser
+    client.stop();                        // Disconnect the phone
+  }
+}
+
+
+

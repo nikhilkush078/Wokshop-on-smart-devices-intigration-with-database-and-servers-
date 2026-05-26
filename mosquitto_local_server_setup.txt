@@ -1,0 +1,60 @@
+# ==============================================================================
+# SECTION 1: INSTALLATION
+# ==============================================================================
+
+# Update the local package index to ensure you pull the latest software versions
+sudo apt update
+
+# Install the Mosquitto Broker daemon AND the CLI client utilities (mosquitto_pub/sub)
+sudo apt install mosquitto mosquitto-clients -y
+
+
+# ==============================================================================
+# SECTION 2: CONFIGURATION (ALLOW NETWORK ENTRY)
+# ==============================================================================
+
+# Force-create the configuration subdirectory layout if it doesn't already exist
+sudo mkdir -p /etc/mosquitto/conf.d/
+
+# Write access rules to allow external hardware (ESP8266) to connect over the local network.
+# - 'listener 1883 0.0.0.0' binds the broker to port 1883 on ALL network interfaces.
+# - 'allow_anonymous true' allows connections without a mandatory username/password.
+echo -e "listener 1883 0.0.0.0\nallow_anonymous true" | sudo tee /etc/mosquitto/conf.d/local.conf
+
+
+# ==============================================================================
+# SECTION 3: NETWORKING & DAEMON ENGINE CONTROL
+# ==============================================================================
+
+# Restart the Mosquitto background service to load your new configuration rules
+sudo systemctl restart mosquitto
+
+# Verify that the broker service is active, running, and stable
+sudo systemctl status mosquitto
+
+# Open port 1883 on your laptop's Uncomplicated Firewall (UFW) so external devices can enter
+sudo ufw allow 1883/tcp
+
+# Reload the firewall configuration to apply the new port permissions instantly
+sudo ufw reload
+
+# Print out your laptop's local network IP address (Your ESP8266 needs this destination IP)
+hostname -I
+
+
+# ==============================================================================
+# SECTION 4: LOCAL TESTING VIA TERMINAL SOCKETS
+# ==============================================================================
+
+# COMMAND A (Run this in Terminal Window 1):
+# Subscribe to the target channel topic. This terminal window will stay open and 
+# listen for any messages traveling through the broker.
+mosquitto_sub -h localhost -t "home/led" -v
+
+# COMMAND B (Run this in Terminal Window 2):
+# Publish a payload message value of '1' to turn the physical ESP8266 LED ON
+mosquitto_pub -h localhost -t "home/led" -m "1"
+
+# COMMAND C (Run this in Terminal Window 2):
+# Publish a payload message value of '0' to turn the physical ESP8266 LED OFF
+mosquitto_pub -h localhost -t "home/led" -m "0"

@@ -57,6 +57,9 @@ Here is a breakdown of the files included in this repository, mapped by their co
 | **Frontend/UI** | HTML5, CSS3, Blynk IoT App Ecosystem |
 | **Network Tunnels** | LocalToNet / Ngrok (for global WAN access) |
 
+## Canva PPT Link 
+https://canva.link/4t8v5obercc6km0
+
 ---
 
 ## ⚡ Quick Start Guide: Running a Local MQTT Session
